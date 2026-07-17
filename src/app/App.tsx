@@ -495,13 +495,38 @@ function ContactSection() {
   const [email, setEmail] = useState("");
   const [payload, setPayload] = useState("");
   const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  function handleSubmit(e: FormEvent) {
+  async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setSent(true);
-    setName("");
-    setEmail("");
-    setPayload("");
+    setLoading(true);
+    setError("");
+    try {
+      const res = await fetch("https://api.web3forms.com/submit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({
+          access_key: "bdd138aa-517d-48b1-a45d-db5a86efcfde",
+          name,
+          email,
+          message: payload,
+        }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setSent(true);
+        setName("");
+        setEmail("");
+        setPayload("");
+      } else {
+        setError("TRANSMISSION_FAILED. Please try again.");
+      }
+    } catch {
+      setError("NETWORK_ERROR. Check your connection and retry.");
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -601,18 +626,28 @@ function ContactSection() {
                 </div>
               </div>
 
+              {/* error */}
+              {error && (
+                <p className="font-['JetBrains_Mono',monospace] text-red-400 text-[11px] tracking-[1.1px] text-center">
+                  {error}
+                </p>
+              )}
+
               {/* submit */}
               <button
                 type="submit"
-                className="w-full relative rounded-[12px] py-[14px] flex gap-2 items-center justify-center bg-[#00f2ff]/5 hover:bg-[#00f2ff]/10 active:scale-[0.98] transition-all duration-100"
+                disabled={loading}
+                className="w-full relative rounded-[12px] py-[14px] flex gap-2 items-center justify-center bg-[#00f2ff]/5 hover:bg-[#00f2ff]/10 active:scale-[0.98] transition-all duration-100 disabled:opacity-60 disabled:cursor-not-allowed"
                 style={{boxShadow:"0 0 0 1px #00f2ff"}}
               >
                 <span className="font-['JetBrains_Mono',monospace] font-bold text-[#00f2ff] text-[11px] tracking-[1.1px]">
-                  TRANSMIT
+                  {loading ? "TRANSMITTING..." : "TRANSMIT"}
                 </span>
-                <svg width="13" height="11" viewBox="0 0 12.6667 10.6667" fill="none">
-                  <path d={svgPaths.p12ff1280} fill="#00F2FF" />
-                </svg>
+                {!loading && (
+                  <svg width="13" height="11" viewBox="0 0 12.6667 10.6667" fill="none">
+                    <path d={svgPaths.p12ff1280} fill="#00F2FF" />
+                  </svg>
+                )}
               </button>
             </form>
           )}
